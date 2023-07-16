@@ -1,9 +1,25 @@
 import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import Offers from './pages/Offers';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   return (
     <div>
-      <h1 className=''>Hello world</h1>
+      <Router>
+        <Routes>
+            <Route path="/" element={<Home/>} />
+            <Route path="/profile" element={<Profile/>} />
+            <Route path="/offers" element={<Offers/>} />
+            <Route path="/sign-in" element={<SignIn/>} />
+            <Route path="/sign-up" element={<SignUp/>} />
+            <Route path="/forgot-password" element={<ForgotPassword/>} />
+        </Routes>
+      </Router>
     </div>
   );
 }
