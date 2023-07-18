@@ -41,6 +41,10 @@ export default function SignUn() {
         password
       );
       
+      updateProfile(auth.currentUser,{
+        displayName:name
+      })
+
       const user= userCredential.user
       
       const formDataCopy = {...formData}
@@ -49,13 +53,10 @@ export default function SignUn() {
       formDataCopy.timeStamp= serverTimestamp();
 
       await setDoc(doc( db , "users", user.uid), formDataCopy);
-        toast.success("Created new account!!")
+
+      toast.success("Created new account!!")
       navigate("/");
 
-      updateProfile(auth.currentUser,{
-        displayName:name
-      })
-      
     } catch (error) {
       toast.error("Something is wrong")
     }
