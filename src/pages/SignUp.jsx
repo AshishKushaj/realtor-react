@@ -2,6 +2,11 @@ import React, { useState } from 'react'
 import { PiEyeClosedBold ,PiEyeBold} from "react-icons/pi";
 import { Link } from 'react-router-dom';
 import OAuth from '../components/OAuth';
+import { getAuth, createUserWithEmailAndPassword ,updateProfile } from "firebase/auth";
+import {db} from '../firebase'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 
 
@@ -14,17 +19,48 @@ export default function SignUn() {
   })
 
   const [showPass, setShowPass]=useState(false);
-
+  const navigate= useNavigate();
 
   const f='w-full px-4 py-2 text-xl rounded text-gray-700 bg-white transition ease-in-out border-gray-300 mb-6';
 
   const {name,email,password}=formData;
-
   function onChange(e){
     setFormData({
       ...formData,[e.target.id]:e.target.value
     })
   }
+
+  async function onSubmit(e){
+    e.preventDefault()
+
+    try {
+      const auth= getAuth()
+      const userCredential= await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      
+      const user= userCredential.user
+      
+      const formDataCopy = {...formData}
+      delete formDataCopy.password
+      
+      formDataCopy.timeStamp= serverTimestamp();
+
+      await setDoc(doc( db , "users", user.uid), formDataCopy);
+        toast.success("Created new account!!")
+      navigate("/");
+
+      updateProfile(auth.currentUser,{
+        displayName:name
+      })
+      
+    } catch (error) {
+      toast.error("Something is wrong")
+    }
+  }
+
 
   return (
     <section>
@@ -39,7 +75,8 @@ export default function SignUn() {
         </div>
 
         <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20 ' >
-            <form > 
+
+            <form onSubmit={onSubmit} > 
 
             <input 
                 type='text'  
