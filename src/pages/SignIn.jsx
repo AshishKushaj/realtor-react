@@ -35,7 +35,7 @@ export default function SignIn() {
     const auth= getAuth()
     const userCredential= await signInWithEmailAndPassword(auth,email,password)
 
-    if(userCredential){
+    if(userCredential.user){
       navigation("/");
     }
     } catch (error) {
