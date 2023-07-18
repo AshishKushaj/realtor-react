@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { PiEyeClosedBold ,PiEyeBold} from "react-icons/pi";
-import { Link } from 'react-router-dom';
+import { Link,  useNavigate } from 'react-router-dom';
 import OAuth from '../components/OAuth';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { toast } from 'react-toastify';
 
 
 
@@ -13,7 +15,7 @@ export default function SignIn() {
   })
 
   const [showPass, setShowPass]=useState(false);
-
+  const navigation=useNavigate()
 
   const f='w-full px-4 py-2 text-xl rounded text-gray-700 bg-white transition ease-in-out border-gray-300 mb-6';
 
@@ -23,6 +25,23 @@ export default function SignIn() {
     setFormData({
       ...formData,[e.target.id]:e.target.value
     })
+  }
+
+  async function onSubmit(e){
+
+    e.preventDefault()
+
+    try {
+    const auth= getAuth()
+    const userCredential= await signInWithEmailAndPassword(auth,email,password)
+
+    if(userCredential){
+      navigation("/");
+    }
+    } catch (error) {
+      toast.error("Incorrect email or password!")
+    }
+
   }
 
   return (
@@ -38,7 +57,7 @@ export default function SignIn() {
         </div>
 
         <div className='w-full md:w-[67%] lg:w-[40%] lg:ml-20 ' >
-            <form > 
+            <form onSubmit={onSubmit} > 
 
               <input 
                 type='email'  
