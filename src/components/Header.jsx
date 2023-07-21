@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation,  useNavigate } from 'react-router-dom';
-import { useAuthStatus } from '../hooks/useAuthStatus';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 export default function Header() {
@@ -23,8 +22,6 @@ export default function Header() {
   function onRoute(route) {
     return route === location.pathname;
   }
-
-  const loggedIn=useAuthStatus()
 
   return (
     <div className='sticky top-0 z-40 bg-white border-b shadow-sm'>
