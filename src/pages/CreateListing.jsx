@@ -1,30 +1,176 @@
 import React, { useState } from "react";
+import Spinner from "../components/Spinner";
+import { toast } from "react-toastify";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+import { getAuth } from "firebase/auth";
+import {v4 as uuidv4} from 'uuid';
+import { addDoc, collection, doc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
+import { useNavigate } from "react-router-dom";
 
 export default function CreateListing() {
+
+  const auth=getAuth()
+  const [geolocationEnabled, setGeoLocationEnabled] = useState(true);
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     type: "rent",
     name: "",
-    bedrooms:1,
-    bathrooms:1,
-    parking:false,
-    furnished:false,
-    address:'',
-    description:'',
-    offer:true,
-    regularPrice:0,
-    discountedPrice:0,
-    image:{},
+    bedrooms: 1,
+    bathrooms: 1,
+    parking: false,
+    furnished: false,
+    address: "",
+    description: "",
+    offer: true,
+    regularPrice: 0,
+    discountedPrice: 0,
+    images: {},
+    latitude: 0,
+    longitude: 0,
   });
 
-  const { type, name,bedrooms,bathrooms,parking,furnished,address,description,offer ,regularPrice,discountedPrice,image, } = formData;
+  const {
+    type,
+    name,
+    bedrooms,
+    bathrooms,
+    parking,
+    furnished,
+    address,
+    description,
+    offer,
+    regularPrice,
+    images,
+    discountedPrice,
+    latitude,
+    longitude,
+  } = formData;
+  const navigate=useNavigate()
 
-  function onChange() {}
+ function onChange(e) {
+    let boolean = null;
+
+    if (e.target.value === "true") boolean = true;
+    if (e.target.value === "false") boolean = false;
+
+    // for files
+    if (e.target.files) {
+      setFormData((prevState) => ({
+        ...prevState,
+        images: e.target.files,
+      }));
+    }
+
+    // for text, name, number
+    if (!e.target.files) {
+      setFormData((prevState) => ({
+        ...prevState,
+        [e.target.id]: boolean ?? e.target.value,
+        // if boolean null consider e.targer.value unless consider boolean
+      }));
+    }
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault();
+
+    setLoading(true);
+    if (+discountedPrice >= +regularPrice) {
+      setLoading(false);
+      toast.error("Discounted price is more than regular price");
+      return;
+    }
+
+    if (images.length > 6) {
+      setLoading(false);
+      toast.error("maimum 6 images are allowed")
+      return;
+    }
+
+    let geolocation={}
+    if(!geolocationEnabled){
+        geolocation.lat=latitude
+        geolocation.lon=longitude
+    }
+
+    async function storeImage(image){
+        return new Promise((resolve,reject)=>{
+            const storage= getStorage()
+            const fileName= `{${auth.currentUser.uid}-${image.name}-${uuidv4()}}`
+            const storageRef= ref(storage,fileName)
+            const uploadTask= uploadBytesResumable(storageRef,image)
+        
+            uploadTask.on(
+              "state_changed",
+              (snapshot) => {
+
+                const progress =
+                  (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log("Upload is " + progress + "% done");
+                switch (snapshot.state) {
+                  case "paused":
+                    console.log("Upload is paused");
+                    break;
+                  case "running":
+                    console.log("Upload is running");
+                    break;
+                }
+              },
+              (error) => {
+                reject(error)
+              },
+              () => {
+                
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    resolve(downloadURL)
+                });
+              }
+            );
+        
+        })
+    }
+
+    const imgUrls= await Promise.all(
+        [...images].map((image)=>storeImage(image))).catch((error)=>{
+            setLoading(false);
+            toast.error("Image not uploaded!!");
+            return;
+        }
+    )
+
+    const formDataCopy={
+        ...formData,
+        imgUrls,
+        geolocation,
+        timestamp:serverTimestamp()
+    }
+    delete formDataCopy.images;
+    !formDataCopy.offer && delete formDataCopy.offer
+
+    const docRef= await addDoc(collection(db,"listings"),formDataCopy);
+    setLoading(false)
+    toast.success("Listing Created!!")
+
+    navigate(`/category/${formDataCopy.type}/${docRef.id}`);
+
+  }
+
+  if (loading) {
+    return <Spinner />;
+  }
 
   return (
     <main className="max-w-md pc-2 mx-auto">
       <h1 className="text-3xl text-center mt-6 font-bold ">Create a listing</h1>
 
-      <form>
+      <form onSubmit={onSubmit}>
         <p className=" text-lg mt-6 font-semibold  ">Sale/Rent</p>
         <div className="flex">
           <button
@@ -45,7 +191,7 @@ export default function CreateListing() {
           <button
             type="button"
             id="type"
-            value="sale"
+            value="rent"
             onClick={onChange}
             className={`px-7 py-3 font-medium
                 text-sm uppercase shadow-md rounded hover:shadow-lg focus:shadow-lg active:shadow-lg transition duration-150 ease-in-out w-full ml-3 ${
@@ -63,8 +209,8 @@ export default function CreateListing() {
           type="text"
           id="name"
           placeholder="Name"
+          onChange={onChange}
           value={name}
-          minLength="3"
           maxLength="30"
           required
           className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded translate  duration-150 ease-in-out focus:text-gray-900 focus:bg-white focus:border-slate-600 mb-6 shadow-md"
@@ -161,16 +307,49 @@ export default function CreateListing() {
           id="address"
           placeholder="Address"
           value={address}
+          onChange={onChange}
           minLength="5"
           required
           className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded translate  duration-150 ease-in-out focus:text-gray-900 focus:bg-white focus:border-slate-600 mb-3 shadow-md"
         />
+
+        {!geolocationEnabled && (
+          <div className="flex space-x-6 justify-start mb-6">
+            <div>
+              <p className="text-lg font-semibold ">Latitude</p>
+              <input
+                type="number"
+                id="latitude"
+                value={latitude}
+                onChange={onChange}
+                required
+                min="-90"
+                max="90"
+                className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded translate duration-150 ease-in-out focus:bg-white focus:text-gray-700 focus:border-slate-600 text-center"
+              />
+            </div>
+            <div>
+              <p className="text-lg font-semibold ">Longitude</p>
+              <input
+                type="number"
+                id="longitude"
+                value={longitude}
+                onChange={onChange}
+                required
+                min="-180"
+                max="180"
+                className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded translate duration-150 ease-in-out focus:bg-white focus:text-gray-700 focus:border-slate-600 text-center"
+              />
+            </div>
+          </div>
+        )}
 
         <p className="text-lg mt-6 font-semibold">Description</p>
         <textarea
           type="text"
           id="description"
           placeholder="Description"
+          onChange={onChange}
           value={description}
           minLength="5"
           required
@@ -206,8 +385,7 @@ export default function CreateListing() {
           </button>
         </div>
 
-
-                {/* =============================================== */}
+        {/* =============================================== */}
         <div className="flex items-center mb-6">
           <div className="">
             <p className="text-lg font-semibold">Regular price</p>
@@ -225,11 +403,9 @@ export default function CreateListing() {
                   <p className="text-md w-full whitespace-nowrap">$ / Month</p>
                 </div>
               )}
-
             </div>
           </div>
         </div>
-
 
         {offer && (
           <div className="flex items-center mb-6">
@@ -245,7 +421,6 @@ export default function CreateListing() {
                   className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded transition duration-150 ease-in-out focus:text-gray-700 focus:bg-white focus:border-slate-600 text-center"
                 />
 
-
                 {type === "rent" && (
                   <div className="">
                     <p className="text-md w-full whitespace-nowrap">
@@ -253,13 +428,10 @@ export default function CreateListing() {
                     </p>
                   </div>
                 )}
-
-
               </div>
             </div>
           </div>
         )}
-
 
         <div className="mb-6">
           <p className="text-lg font-semibold">Images</p>
@@ -283,9 +455,8 @@ export default function CreateListing() {
         >
           Create Listing
         </button>
-        
 
-                {/* ---------------------------------------- */}
+        {/* ---------------------------------------- */}
       </form>
     </main>
   );
