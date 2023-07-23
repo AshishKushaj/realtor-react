@@ -4,8 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import {
   collection,
+  deleteDoc,
   doc,
-  getDoc,
   getDocs,
   orderBy,
   query,
@@ -92,6 +92,26 @@ export default function Profile() {
     fetchUserListings();
   }, [auth.currentUser.uid]);
 
+
+    async function onDelete(listingId){
+
+      if(window.confirm("Are you sure you want to delete?")){
+        await deleteDoc(doc(db,'listings',listingId))
+
+        const updateListing=listings.filter((listing)=>
+          listing.id!==listingId
+        )
+
+        setListings(updateListing)
+        toast.success("Listing Deleted!!")
+
+      }
+    }
+
+    function onEdit(listingId){
+      navigate(`/edit-listing/${listingId}`)
+    }
+
   return (
     <div>
       <section className="max-w-6xl mx-auto flex flex-col items-center justify-center ">
@@ -161,7 +181,7 @@ export default function Profile() {
       </section>
 
       <div>
-        {!loading && listings.length>0 && (
+        {!loading && listings.length > 0 && (
           <>
             <h2 className="text-2xl mg-6 text-center font-semibold mt-10">
               My Listings
@@ -173,7 +193,9 @@ export default function Profile() {
                   key={listing.id}
                   id={listing.id}
                   listing={listing.data}
-                />  
+                  onDelete={()=>onDelete(listing.id)}
+                  onEdit={()=>onEdit(listing.id)}
+                />
               ))}
             </ul>
           </>

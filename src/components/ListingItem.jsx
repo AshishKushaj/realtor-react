@@ -2,8 +2,10 @@ import React from "react";
 import Moment from "react-moment";
 import { Link } from "react-router-dom";
 import { GrMapLocation } from "react-icons/gr";
+import { TbTrashXFilled } from "react-icons/tb";
+import { FaEdit } from "react-icons/fa";
 
-export default function ListingItem({ listing, id }) {
+export default function ListingItem({ listing, id, onDelete, onEdit }) {
   return (
     <li className="relative m-[10px] flex flex-col bg-white justify-between items-center shadow-md hover:shadow-xl rounded-md overflow-hidden transition-shadow duration-150">
       <Link className="contents" to={`category/${listing.type}/${id}`}>
@@ -55,6 +57,20 @@ export default function ListingItem({ listing, id }) {
           </div>
         </div>
       </Link>
+
+      {onDelete && (
+        <TbTrashXFilled
+          className="pointer text-red-600 h-[14px] cursor-pointer absolute right-2 bottom-2"
+          onClick={() => onDelete(listing.id)}
+        />
+      )}
+
+      {onEdit && (
+        <FaEdit
+          className="pointer text-black h-4 cursor-pointer absolute right-8 bottom-2"
+          onClick={() => onEdit(listing.id)}
+        />
+      )} 
     </li>
   );
 }
