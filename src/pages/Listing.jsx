@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../firebase";
 import Spinner from "../components/Spinner";
-import { toast } from "react-toastify";
 import { Swiper, SwiperSlide } from "swiper/react";
 import  {
   EffectFade,
@@ -17,25 +16,25 @@ import "swiper/css/bundle";
 export default function Listing() {
   const params = useParams();
   const [listing, setListing] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
 
   SwiperCore.use([Autoplay, Navigation, Pagination]);
 
   useEffect(() => {
     async function fetchListing() {
-      const docSnap = await getDoc(doc(db, "listings", params.listingId));
+        const docRef = doc(db, "listings", params.listingId);
+      const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         setListing(docSnap.data());
       }
     }
-    setLoading(true);
     fetchListing();
     setLoading(false);
   }, [params.listingId]);
 
-  if (loading) {
+  if (loading || !listing) {
     return <Spinner />;
   }
 
@@ -49,7 +48,7 @@ export default function Listing() {
         modules={EffectFade}
         autoplay={{ delay: 3000 }}
       >
-        {listing.imageUrls.map((url, index) => (
+        {listing.imgUrls.map((url, index) => (
           <SwiperSlide key={index}>
             <div
               className="relative w-full overflow-hidden h-[300px]"
