@@ -1,7 +1,12 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import Slider from '../components/Slider'
+
 
 export default function Home() {
+
   return (
-    <div className='text-6xl justify-center items-center'>Home</div>
+    <div>
+      <Slider/>
+    </div>
   )
 }

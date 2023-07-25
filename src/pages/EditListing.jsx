@@ -345,13 +345,17 @@ export default function EditListing() {
           className="w-full px-4 py-2 text-xl text-gray-700 bg-white border border-gray-300 rounded translate  duration-150 ease-in-out focus:text-gray-900 focus:bg-white focus:border-slate-600 mb-3 shadow-md"
         />
 
-        {!geolocationEnabled && (
+        <h3 className="flex space-x-6 text-lg font-semibold justify-start mb-3 mt-8 underline">
+          Optional
+        </h3>
+        {
           <div className="flex space-x-6 justify-start mb-6">
             <div>
               <p className="text-lg font-semibold ">Latitude</p>
               <input
                 type="number"
                 id="latitude"
+                step="0.000001"
                 value={latitude}
                 onChange={onChange}
                 required
@@ -365,6 +369,7 @@ export default function EditListing() {
               <input
                 type="number"
                 id="longitude"
+                step="0.000001"
                 value={longitude}
                 onChange={onChange}
                 required
@@ -374,7 +379,7 @@ export default function EditListing() {
               />
             </div>
           </div>
-        )}
+        }
 
         <p className="text-lg mt-6 font-semibold">Description</p>
         <textarea
