@@ -4,9 +4,12 @@ import { collection, getDocs, limit, orderBy, query, where } from 'firebase/fire
 import { db } from '../firebase';
 import { Link } from "react-router-dom";
 import ListingItem from "../components/ListingItem";
+import Spinner from '../components/Spinner';
 
 
 export default function Home() {
+
+  const [loading,setLoading]=useState(true)
 
   // Places for offer
   const [offerListings, setOfferListings] = useState(null);
@@ -99,7 +102,11 @@ export default function Home() {
       }
     }
     fetchListings();
+    setLoading(false)
   }, []);
+
+  if(loading)
+    return <Spinner/>
 
   return (
     <div>
